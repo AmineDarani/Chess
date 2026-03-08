@@ -7,11 +7,13 @@ import {
   applyMove,
   createGame,
   flag,
+  getClockSnapshot,
   getGame,
   joinGame,
   isValidGameId,
   requestRematch,
   resign,
+  startClock,
 } from './games.js'
 
 const app = express()
@@ -25,6 +27,15 @@ const io = new Server(httpServer, {
 
 app.use(cors())
 app.use(express.json())
+
+import type { GameState } from './games.js'
+
+function clockPayload(game: GameState) {
+  if (!game.timeControl || game.whiteTimeMs === null || game.blackTimeMs === null) {
+    return { whiteTimeMs: null, blackTimeMs: null }
+  }
+  return getClockSnapshot(game)
+}
 
 app.post('/games', (req, res) => {
   const body = req.body ?? {}
@@ -48,6 +59,7 @@ app.get('/games/:id', (req, res) => {
     res.status(404).json({ error: 'Game not found' })
     return
   }
+  const clk = clockPayload(game)
   res.json({
     id: game.id,
     fen: game.fen,
@@ -56,6 +68,7 @@ app.get('/games/:id', (req, res) => {
     blackPlayerId: game.blackPlayerId,
     result: game.result,
     timeControl: game.timeControl,
+    ...clk,
   })
 })
 
@@ -71,6 +84,7 @@ app.post('/games/:id/join', (req, res) => {
     res.status(404).json({ error: 'Game not found' })
     return
   }
+  const clk = clockPayload(result.game)
   res.json({
     game: {
       id: result.game.id,
@@ -80,13 +94,16 @@ app.post('/games/:id/join', (req, res) => {
       blackPlayerId: result.game.blackPlayerId,
       result: result.game.result,
       timeControl: result.game.timeControl,
+      ...clk,
     },
     role: result.role,
     playerId: result.playerId,
   })
   if (result.role === 'black') {
+    startClock(id)
     const g = getGame(id)
     if (g) {
+      const gClk = clockPayload(g)
       io.to(`game:${id}`).emit('game-update', {
         fen: g.fen,
         moves: g.moves,
@@ -95,6 +112,7 @@ app.post('/games/:id/join', (req, res) => {
         timeControl: g.timeControl,
         whitePlayerId: g.whitePlayerId,
         blackPlayerId: g.blackPlayerId,
+        ...gClk,
       })
     }
     io.to(`game:${id}`).emit('opponent-joined', { gameId: id })
@@ -122,6 +140,7 @@ io.on('connection', (socket) => {
       const joinMsg = maybeAnnounceJoin(gameId, playerId, role)
       if (joinMsg) io.to(room).emit('chat-message', joinMsg)
     }
+    const clk = clockPayload(game)
     socket.emit('game-state', {
       fen: game.fen,
       moves: game.moves,
@@ -131,6 +150,7 @@ io.on('connection', (socket) => {
       whitePlayerId: game.whitePlayerId,
       blackPlayerId: game.blackPlayerId,
       chat: getChatMessages(gameId),
+      ...clk,
     })
   })
 
@@ -152,6 +172,7 @@ io.on('connection', (socket) => {
         return
       }
       const room = `game:${gameId}`
+      const clk = clockPayload(result.game)
       const updatePayload = {
         fen: result.game.fen,
         moves: result.game.moves,
@@ -160,6 +181,7 @@ io.on('connection', (socket) => {
         timeControl: result.game.timeControl,
         whitePlayerId: result.game.whitePlayerId,
         blackPlayerId: result.game.blackPlayerId,
+        ...clk,
       }
       io.to(room).emit('game-update', updatePayload)
       if (result.game.result.status !== 'ongoing') {
@@ -187,12 +209,14 @@ io.on('connection', (socket) => {
     const updated = resign(gameId, playerId)
     if (updated) {
       const room = `game:${gameId}`
+      const clk = clockPayload(updated)
       io.to(room).emit('game-update', {
         fen: updated.fen,
         moves: updated.moves,
         lastMove: undefined,
         result: updated.result,
         timeControl: updated.timeControl,
+        ...clk,
       })
       const winner =
         updated.result.status === 'resignation'
@@ -238,11 +262,13 @@ io.on('connection', (socket) => {
     const updated = flag(gameId, playerId)
     if (updated) {
       const room = `game:${gameId}`
+      const clk = clockPayload(updated)
       io.to(room).emit('game-update', {
         fen: updated.fen,
         moves: updated.moves,
         lastMove: undefined,
         result: updated.result,
+        ...clk,
       })
       const winner =
         updated.result.status === 'timeout'

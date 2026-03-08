@@ -12,6 +12,8 @@ type GameUpdate = {
   timeControl?: { initialMs: number; incrementMs: number } | null
   whitePlayerId?: string | null
   blackPlayerId?: string | null
+  whiteTimeMs?: number | null
+  blackTimeMs?: number | null
 }
 
 export function useOnlineGameSocket(
@@ -35,6 +37,8 @@ export function useOnlineGameSocket(
   const [timeControl, setTimeControl] = useState<{ initialMs: number; incrementMs: number } | null>(
     initialTimeControl ?? null,
   )
+  const [whiteTimeMs, setWhiteTimeMs] = useState<number | null>(null)
+  const [blackTimeMs, setBlackTimeMs] = useState<number | null>(null)
   const onRematchReadyRef = useRef(onRematchReady)
   onRematchReadyRef.current = onRematchReady
 
@@ -59,6 +63,8 @@ export function useOnlineGameSocket(
       if (payload.result) setResult(payload.result)
       if (payload.timeControl !== undefined) setTimeControl(payload.timeControl ?? null)
       if (payload.whitePlayerId && payload.blackPlayerId) setOpponentJoined(true)
+      if (payload.whiteTimeMs !== undefined) setWhiteTimeMs(payload.whiteTimeMs ?? null)
+      if (payload.blackTimeMs !== undefined) setBlackTimeMs(payload.blackTimeMs ?? null)
     }
 
     socket.on('game-state', (payload: GameUpdate & { chat?: ChatMessage[]; timeControl?: { initialMs: number; incrementMs: number } | null; whitePlayerId?: string | null; blackPlayerId?: string | null }) => {
@@ -151,5 +157,7 @@ export function useOnlineGameSocket(
     messages,
     opponentJoined,
     timeControl,
+    whiteTimeMs,
+    blackTimeMs,
   }
 }

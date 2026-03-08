@@ -20,14 +20,21 @@ type Options = {
   timeControl: TimeControl
   isRunning: boolean
   onFlag: () => void
+  serverTimeMs?: number | null
 }
 
-export function useHumanClock({ timeControl, isRunning, onFlag }: Options) {
+export function useHumanClock({ timeControl, isRunning, onFlag, serverTimeMs }: Options) {
   const [remainingMs, setRemainingMs] = useState(timeControl.initialMs)
   const onFlagRef = useRef(onFlag)
   useEffect(() => {
     onFlagRef.current = onFlag
   }, [onFlag])
+
+  useEffect(() => {
+    if (serverTimeMs !== undefined && serverTimeMs !== null) {
+      setRemainingMs(serverTimeMs)
+    }
+  }, [serverTimeMs])
 
   useEffect(() => {
     if (!isRunning) return

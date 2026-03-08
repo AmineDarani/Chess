@@ -21,6 +21,10 @@ export type GameState = {
   blackPlayerId: string | null
   result: GameResult
   timeControl: TimeControl | null
+  whiteTimeMs: number | null
+  blackTimeMs: number | null
+  lastMoveAt: number | null
+  clockRunning: boolean
   whiteWantsRematch: boolean
   blackWantsRematch: boolean
   createdAt: number
@@ -45,6 +49,7 @@ export function createGame(
 ): { id: string; url: string; creatorPlayerId: string } {
   const id = nanoid(10)
   const creatorPlayerId = nanoid(12)
+  const tc = timeControl ?? null
   const game: GameState = {
     id,
     fen: START_FEN,
@@ -52,7 +57,11 @@ export function createGame(
     whitePlayerId: creatorPlayerId,
     blackPlayerId: null,
     result: { status: 'ongoing' },
-    timeControl: timeControl ?? null,
+    timeControl: tc,
+    whiteTimeMs: tc ? tc.initialMs : null,
+    blackTimeMs: tc ? tc.initialMs : null,
+    lastMoveAt: null,
+    clockRunning: false,
     whiteWantsRematch: false,
     blackWantsRematch: false,
     createdAt: Date.now(),
@@ -94,6 +103,29 @@ export function joinGame(gameId: string, playerId?: string): JoinResult | null {
   return { game, role: 'spectator', playerId: newPlayerId }
 }
 
+export function getClockSnapshot(game: GameState): { whiteTimeMs: number; blackTimeMs: number } {
+  if (game.whiteTimeMs === null || game.blackTimeMs === null) {
+    return { whiteTimeMs: 0, blackTimeMs: 0 }
+  }
+  if (!game.clockRunning || !game.lastMoveAt) {
+    return { whiteTimeMs: game.whiteTimeMs, blackTimeMs: game.blackTimeMs }
+  }
+  const elapsed = Date.now() - game.lastMoveAt
+  const chess = new Chess(game.fen)
+  const whiteActive = chess.turn() === 'w'
+  return {
+    whiteTimeMs: whiteActive ? Math.max(0, game.whiteTimeMs - elapsed) : game.whiteTimeMs,
+    blackTimeMs: whiteActive ? game.blackTimeMs : Math.max(0, game.blackTimeMs - elapsed),
+  }
+}
+
+export function startClock(gameId: string): void {
+  const game = games.get(gameId)
+  if (!game || !game.timeControl || game.clockRunning) return
+  game.clockRunning = true
+  game.lastMoveAt = Date.now()
+}
+
 export function applyMove(
   gameId: string,
   playerId: string,
@@ -115,6 +147,34 @@ export function applyMove(
   if (expectedPlayerIsWhite && !isWhite) return { ok: false, reason: 'not-your-turn' }
   if (!expectedPlayerIsWhite && !isBlack) return { ok: false, reason: 'not-your-turn' }
 
+  if (game.timeControl && game.clockRunning && game.lastMoveAt !== null) {
+    const now = Date.now()
+    const elapsed = now - game.lastMoveAt
+    if (expectedPlayerIsWhite) {
+      game.whiteTimeMs = Math.max(0, (game.whiteTimeMs ?? 0) - elapsed)
+      if (game.whiteTimeMs <= 0) {
+        game.result = { status: 'timeout', winner: 'b' }
+        game.clockRunning = false
+        return { ok: false, reason: 'game-over' }
+      }
+    } else {
+      game.blackTimeMs = Math.max(0, (game.blackTimeMs ?? 0) - elapsed)
+      if (game.blackTimeMs <= 0) {
+        game.result = { status: 'timeout', winner: 'w' }
+        game.clockRunning = false
+        return { ok: false, reason: 'game-over' }
+      }
+    }
+    if (game.timeControl.incrementMs > 0) {
+      if (expectedPlayerIsWhite) {
+        game.whiteTimeMs = game.whiteTimeMs! + game.timeControl.incrementMs
+      } else {
+        game.blackTimeMs = game.blackTimeMs! + game.timeControl.incrementMs
+      }
+    }
+    game.lastMoveAt = now
+  }
+
   const move = chess.move({
     from: from as `${string}${string}`,
     to: to as `${string}${string}`,
@@ -127,10 +187,13 @@ export function applyMove(
 
   if (chess.isCheckmate()) {
     game.result = { status: 'checkmate', winner: chess.turn() === 'w' ? 'b' : 'w' }
+    game.clockRunning = false
   } else if (chess.isStalemate()) {
     game.result = { status: 'stalemate' }
+    game.clockRunning = false
   } else if (chess.isDraw()) {
     game.result = { status: 'draw', reason: 'draw' }
+    game.clockRunning = false
   }
 
   return {
@@ -148,6 +211,13 @@ export function resign(gameId: string, playerId: string): GameState | null {
   const isWhite = game.whitePlayerId === playerId
   const isBlack = game.blackPlayerId === playerId
   if (!isWhite && !isBlack) return null
+
+  if (game.timeControl && game.clockRunning && game.lastMoveAt) {
+    const snap = getClockSnapshot(game)
+    game.whiteTimeMs = snap.whiteTimeMs
+    game.blackTimeMs = snap.blackTimeMs
+  }
+  game.clockRunning = false
 
   const winner = isWhite ? 'b' : 'w'
   game.result = { status: 'resignation', winner }
@@ -169,6 +239,7 @@ export function requestRematch(gameId: string, playerId: string): { newGameId: s
 
   if (game.whiteWantsRematch && game.blackWantsRematch) {
     const newId = nanoid(10)
+    const tc = game.timeControl
     const newGame: GameState = {
       id: newId,
       fen: START_FEN,
@@ -176,7 +247,11 @@ export function requestRematch(gameId: string, playerId: string): { newGameId: s
       whitePlayerId: game.whitePlayerId,
       blackPlayerId: game.blackPlayerId,
       result: { status: 'ongoing' },
-      timeControl: game.timeControl,
+      timeControl: tc,
+      whiteTimeMs: tc ? tc.initialMs : null,
+      blackTimeMs: tc ? tc.initialMs : null,
+      lastMoveAt: null,
+      clockRunning: false,
       whiteWantsRematch: false,
       blackWantsRematch: false,
       createdAt: Date.now(),
@@ -199,7 +274,16 @@ export function flag(gameId: string, playerId: string): GameState | null {
   const isBlack = game.blackPlayerId === playerId
   if (!isWhite && !isBlack) return null
 
-  const winner = isWhite ? 'b' : 'w'
+  const snap = getClockSnapshot(game)
+  game.whiteTimeMs = snap.whiteTimeMs
+  game.blackTimeMs = snap.blackTimeMs
+  game.clockRunning = false
+
+  const whiteOut = snap.whiteTimeMs <= 0
+  const blackOut = snap.blackTimeMs <= 0
+  if (!whiteOut && !blackOut) return null
+
+  const winner = whiteOut ? 'b' : 'w'
   game.result = { status: 'timeout', winner }
   return { ...game }
 }

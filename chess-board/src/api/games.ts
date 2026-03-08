@@ -18,6 +18,8 @@ export type GameState = {
   blackPlayerId: string | null
   result?: GameResult
   timeControl?: TimeControl | null
+  whiteTimeMs?: number | null
+  blackTimeMs?: number | null
 }
 
 export type PlayerRole = 'white' | 'black' | 'spectator'

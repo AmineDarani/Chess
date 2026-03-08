@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Chessboard, type SquareHandlerArgs } from 'react-chessboard'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import '../App.css'
@@ -139,7 +139,7 @@ function OnlineGameContent({
     [navigate, playerId],
   )
 
-  const { fen, moves, sendMove, sendResign, sendFlag, requestRematch, sendChat, canMove, result, messages, opponentJoined, timeControl } =
+  const { fen, moves, sendMove, sendResign, sendFlag, requestRematch, sendChat, canMove, result, messages, opponentJoined, timeControl, whiteTimeMs, blackTimeMs } =
     useOnlineGameSocket(
       game.id,
       playerId,
@@ -176,6 +176,7 @@ function OnlineGameContent({
       whiteToMove &&
       !isGameOver,
     onFlag: () => role === 'white' && sendFlag(),
+    serverTimeMs: whiteTimeMs,
   })
 
   const blackClock = useHumanClock({
@@ -186,24 +187,8 @@ function OnlineGameContent({
       blackToMove &&
       !isGameOver,
     onFlag: () => role === 'black' && sendFlag(),
+    serverTimeMs: blackTimeMs,
   })
-
-  const prevMovesLengthRef = useRef(moves.length)
-  const whiteClockRef = useRef(whiteClock)
-  const blackClockRef = useRef(blackClock)
-  useEffect(() => {
-    whiteClockRef.current = whiteClock
-    blackClockRef.current = blackClock
-  })
-  useEffect(() => {
-    if (moves.length > prevMovesLengthRef.current && timeControl) {
-      const newMoveIndex = moves.length - 1
-      const moverIsWhite = newMoveIndex % 2 === 0
-      if (moverIsWhite) whiteClockRef.current.addIncrement()
-      else blackClockRef.current.addIncrement()
-    }
-    prevMovesLengthRef.current = moves.length
-  }, [moves.length, timeControl])
 
   const history = buildHistoryFromMoves(moves)
   const moveHistory = useMoveHistory({
