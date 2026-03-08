@@ -176,6 +176,7 @@ export function requestRematch(gameId: string, playerId: string): { newGameId: s
       whitePlayerId: game.whitePlayerId,
       blackPlayerId: game.blackPlayerId,
       result: { status: 'ongoing' },
+      timeControl: game.timeControl,
       whiteWantsRematch: false,
       blackWantsRematch: false,
       createdAt: Date.now(),
