@@ -41,7 +41,7 @@ export function useOnlineGameSocket(
   useEffect(() => {
     if (!gameId || !playerId || !role) return
 
-    const url = typeof window !== 'undefined' ? window.location.origin : ''
+    const url = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '')
     const socket = io(url, { path: '/socket.io', transports: ['websocket', 'polling'] })
     socketRef.current = socket
 
