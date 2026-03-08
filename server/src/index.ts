@@ -260,10 +260,19 @@ io.on('connection', (socket) => {
     const { gameId, playerId } = payload ?? {}
     if (typeof gameId !== 'string' || typeof playerId !== 'string') return
     if (!isValidGameId(gameId)) return
+    const game = getGame(gameId)
+    if (!game) return
+    const isWhite = game.whitePlayerId === playerId
+    const isBlack = game.blackPlayerId === playerId
+    if (!isWhite && !isBlack) return
     const rematch = requestRematch(gameId, playerId)
+    const room = `game:${gameId}`
     if (rematch) {
-      const room = `game:${gameId}`
       io.to(room).emit('rematch-ready', { newGameId: rematch.newGameId })
+    } else {
+      const who = isWhite ? 'White' : 'Black'
+      const sys = addChatMessage(gameId, { type: 'system', text: `${who} wants a rematch` })
+      io.to(room).emit('chat-message', sys)
     }
   })
 

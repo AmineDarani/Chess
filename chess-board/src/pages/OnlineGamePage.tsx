@@ -102,6 +102,7 @@ export default function OnlineGamePage() {
 
   return (
     <OnlineGameContent
+      key={game.id}
       game={game}
       role={role}
       playerId={playerId}
