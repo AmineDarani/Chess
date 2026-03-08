@@ -1,0 +1,42 @@
+.move-history-panel {
+  margin-bottom: 8px;
+}
+
+.move-history-moves {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+  max-height: 4em;
+  overflow-y: auto;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.move-history-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.move-history-btn {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.move-history-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.move-history-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.move-history-undo {
+  margin-left: auto;
+}

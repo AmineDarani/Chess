@@ -1,0 +1,37 @@
+.evaluation-graph {
+  width: 100%;
+  height: 100px;
+  flex-shrink: 0;
+  padding: 6px 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.evaluation-graph svg {
+  display: block;
+  cursor: pointer;
+}
+
+.evaluation-graph-zero {
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 1;
+}
+
+.evaluation-graph-area {
+  opacity: 1;
+}
+
+.evaluation-graph-scrubber {
+  stroke: #22c55e;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.evaluation-graph-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+}

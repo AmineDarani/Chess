@@ -1,0 +1,68 @@
+.review-move-list {
+  margin-bottom: 0;
+  font-size: 0.78rem;
+}
+
+.review-move-wrap {
+  display: inline;
+}
+
+.review-move-num {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9em;
+  margin-right: 2px;
+}
+
+.review-move-item {
+  display: inline;
+  padding: 1px 4px;
+  margin: 0 1px 2px 0;
+  font-size: inherit;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.review-move-item:hover {
+  background: rgba(160, 120, 255, 0.2);
+}
+
+.review-move-item.selected {
+  background: rgba(160, 120, 255, 0.35);
+  color: white;
+}
+
+.review-move-start {
+  margin-right: 8px;
+}
+
+.review-move-controls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.review-move-controls .move-history-btn {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(160, 120, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.review-move-controls .move-history-btn:hover:not(:disabled) {
+  background: rgba(160, 120, 255, 0.15);
+  border-color: rgba(160, 120, 255, 0.4);
+}
+
+.review-move-controls .move-history-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

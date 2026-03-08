@@ -1,0 +1,63 @@
+/* Chess.com-style move classification badges */
+
+.move-class-overlay {
+  position: absolute;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+}
+
+.move-class-overlay-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Great - only good move (blue, Chess.com brilliant-style) */
+.move-class-overlay-great {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Best - engine's top choice (green) */
+.move-class-overlay-best {
+  background: #22c55e;
+  color: white;
+}
+
+/* Excellent - nearly best (light green) */
+.move-class-overlay-excellent {
+  background: #4ade80;
+  color: #14532d;
+}
+
+/* Inaccuracy - slight mistake (yellow/amber) */
+.move-class-overlay-inaccuracy {
+  background: #facc15;
+  color: #422006;
+}
+
+/* Mistake (orange) */
+.move-class-overlay-mistake {
+  background: #f97316;
+  color: white;
+}
+
+/* Blunder (red) */
+.move-class-overlay-blunder {
+  background: #ef4444;
+  color: white;
+}

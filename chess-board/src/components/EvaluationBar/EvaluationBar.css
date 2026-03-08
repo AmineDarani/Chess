@@ -1,0 +1,41 @@
+.evaluation-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 28px;
+}
+
+.evaluation-bar-track {
+  width: 100%;
+  height: 180px;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(160, 120, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.evaluation-bar-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.evaluation-bar-white,
+.evaluation-bar-black {
+  flex-shrink: 0;
+  transition: height 0.15s ease-out;
+}
+
+.evaluation-bar-white {
+  background: linear-gradient(to top, #f5f5f0, #e8e8e0);
+  min-height: 4px;
+}
+
+.evaluation-bar-black {
+  background: linear-gradient(to bottom, #2d2d2d, #1a1a1a);
+  min-height: 4px;
+}
